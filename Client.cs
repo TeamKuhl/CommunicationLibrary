@@ -10,8 +10,16 @@ using Newtonsoft.Json;
 
 namespace CommunicationLibrary
 {
+    /// <summary>
+    ///     Callback for received messages
+    /// </summary>
+    /// <param name="sender">The event sender.</param>
+    /// <param name="eventArgs">Event Arguments.</param>
     public delegate void ClientReceiveCallback(object sender, EventArgs eventArgs);
 
+    /// <summary>
+    ///     Extends event arguments.
+    /// </summary>
     public class ClientReceivedEventArgs : EventArgs
     {
         public ClientReceivedEventArgs(object o)
@@ -21,14 +29,24 @@ namespace CommunicationLibrary
         public object parsedResult { get; set; }
     }
 
+    /// <summary>
+    ///     Client class to handle communication with a server.
+    /// </summary>
     public class Client
     {
         // tcp
         private TcpClient client;
         private NetworkStream clientStream;
 
+        /// <summary>
+        ///     Client message event for incoming messages.
+        /// </summary>
         public event ClientReceiveCallback clientReceiveCallback;
 
+        /// <summary>
+        ///     Give parsed object to Eventhandler
+        /// </summary>
+        /// <param name="o">Object</param>
         public void onObjectParsed(object o)
         {
             if (clientReceiveCallback != null)
