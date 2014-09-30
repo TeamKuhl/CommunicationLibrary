@@ -19,19 +19,19 @@ namespace BomberLib
         private TcpListener tcpListener;
         private Thread listenThread;
         private List<TcpClient> allClients = new List<TcpClient>();
-        private Log log;
+        // private Log log;
         private Boolean loggingEnabled;
-        private Boolean serveractive;
+        private Boolean serverActive;
 
-        /// <summary>
-        ///     Initialize the server with logging
-        /// </summary>
-        /// <param name="thelog"></param>
-        public Server(Log thelog)
-        {
-            log = thelog;
-            loggingEnabled = true;
-        }
+        ///// <summary>
+        /////     initialize the server with logging
+        ///// </summary>
+        ///// <param name="thelog"></param>
+        //public server(log thelog)
+        //{
+        //    log = thelog;
+        //    loggingenabled = true;
+        //}
 
         /// <summary>
         ///     Initialize the server without logging
@@ -48,9 +48,9 @@ namespace BomberLib
         /// <returns>Success of start process.</returns>
         public Boolean start(int port)
         {
-            if (!serveractive)
+            if (!serverActive)
             {
-                serveractive = true;
+                serverActive = true;
 
                 // set up tcp listener
                 this.tcpListener = new TcpListener(IPAddress.Any, port);
@@ -58,12 +58,12 @@ namespace BomberLib
                 // set up thread & start the server
                 this.listenThread = new Thread(new ThreadStart(ListenForClients));
                 this.listenThread.Start();
-                if (loggingEnabled) log.info("Server started on port " + port);
+                //if (loggingEnabled) log.info("Server started on port " + port);
                 return true;
             }
             else
             {
-                if (loggingEnabled) log.error("Server is already running");
+                //if (loggingEnabled) log.error("Server is already running");
                 return false;
             }
         }
@@ -74,16 +74,16 @@ namespace BomberLib
         /// <returns></returns>
         public Boolean stop()
         {
-            if (serveractive)
+            if (serverActive)
             {
-                serveractive = false;
-                if (loggingEnabled) log.warn("Server is going to stop");
+                serverActive = false;
+                //if (loggingEnabled) log.warn("Server is going to stop");
                 this.tcpListener.Stop();
                 return true;
             }
             else
             {
-                if (loggingEnabled) log.error("Server is not running");
+                //if (loggingEnabled) log.error("Server is not running");
                 return false;
             }
         }
@@ -128,15 +128,15 @@ namespace BomberLib
         /// <summary>
         ///     Send data object to all clients
         /// </summary>
-        /// <param name="message">The message to send.</param>
+        /// <param name="data">The message to send.</param>
         /// <returns>Success of send process.</returns>
-        public Boolean sendToAll(String message)
+        public Boolean sendToAll(Object data)
         {
             // loop all clients
             foreach (TcpClient client in this.allClients)
             {
                 // send message
-                this.send(client, message);
+                this.send(client, data);
             }
             return false;
         }
@@ -144,10 +144,10 @@ namespace BomberLib
         /// <summary>
         ///     Send data to all clients except one
         /// </summary>
-        /// <param name="message">The message to send.</param>
+        /// <param name="data">The message to send.</param>
         /// <param name="exception">The client who wont get the message</param>
         /// <returns>Success of send process.</returns>
-        public Boolean sendToAllExcept(TcpClient exception, String message)
+        public Boolean sendToAllExcept(TcpClient exception, Object data)
         {
             // loop all clients
             foreach (TcpClient client in this.allClients)
@@ -155,7 +155,7 @@ namespace BomberLib
                 if (client != exception)
                 {
                     // send message
-                    this.send(client, message);
+                    this.send(client, data);
                 }
             }
             return false;
@@ -166,9 +166,9 @@ namespace BomberLib
         /// </summary>
         private void ListenForClients()
         {
-            if(serveractive) this.tcpListener.Start();
+            if(serverActive) this.tcpListener.Start();
 
-            while (serveractive)
+            while (serverActive)
             {
                 Thread clientThread = new Thread(new ParameterizedThreadStart(HandleClientComm));
 
@@ -183,11 +183,11 @@ namespace BomberLib
                     //with connected client
                     clientThread.Start(client);
                     // second part = IP of client
-                    if (loggingEnabled) log.info("New connection to " + ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString());
+                    //if (loggingEnabled) log.info("New connection to " + ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString());
                 }
                 catch (Exception e)
                 {
-                    if (loggingEnabled) log.warn("Server stopped");
+                    //if (loggingEnabled) log.warn("Server stopped");
                 }
             }
         }
@@ -220,7 +220,7 @@ namespace BomberLib
                 catch
                 {
                     //a socket error has occured
-                    if(loggingEnabled) log.error("a socket error has occurred");
+                    //if(loggingEnabled) log.error("a socket error has occurred");
                     break;
                 }
 
@@ -241,7 +241,7 @@ namespace BomberLib
             this.allClients.Remove(tcpClient);
 
             tcpClient.Close();
-            if(loggingEnabled) log.info("the client has disconnected from the server");
+            //if(loggingEnabled) log.info("the client has disconnected from the server");
         }
 
     }
