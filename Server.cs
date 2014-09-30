@@ -8,7 +8,7 @@ using System.Threading;
 using System.Net;
 using Newtonsoft.Json;
 
-namespace BomberLib
+namespace CommunicationLibrary
 {
     /// <summary>
     ///     Server Class for TCP Communication.
@@ -166,7 +166,7 @@ namespace BomberLib
         /// </summary>
         private void ListenForClients()
         {
-            if(serverActive) this.tcpListener.Start();
+            if (serverActive) this.tcpListener.Start();
 
             while (serverActive)
             {

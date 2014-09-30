@@ -8,7 +8,7 @@ using System.Threading;
 using System.Net;
 using Newtonsoft.Json;
 
-namespace BomberLib
+namespace CommunicationLibrary
 {
     public class Client
     {
@@ -119,7 +119,7 @@ namespace BomberLib
                 if (bytesRead == 0)
                 {
                     // disconnect?
-                    break;
+                    throw new ClientException("Zero bytes read from socket");
                 }
 
                 // read message
