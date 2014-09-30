@@ -10,15 +10,35 @@ using Newtonsoft.Json;
 
 namespace CommunicationLibrary
 {
+    public delegate void ClientReceiveCallback(object sender, EventArgs eventArgs);
+
+    public class ClientReceivedEventArgs : EventArgs
+    {
+        public ClientReceivedEventArgs(object o)
+        {
+            this.parsedResult = o;
+        }
+        public object parsedResult { get; set; }
+    }
+
     public class Client
     {
-        // tcp 
-        TcpClient client;
-        NetworkStream clientStream;
+        // tcp
+        private TcpClient client;
+        private NetworkStream clientStream;
 
+        public event ClientReceiveCallback clientReceiveCallback;
+
+        public void onObjectParsed(object o)
+        {
+            if (clientReceiveCallback != null)
+            {
+                clientReceiveCallback(this, new ClientReceivedEventArgs(o));
+            }
+        }
 
         /// <summary>
-        ///     Connects to a server.
+        /// Connects to a server.
         /// </summary>
         /// <param name="ip">The ip of the server.</param>
         /// <param name="port">The port of the server.</param>
@@ -120,12 +140,17 @@ namespace CommunicationLibrary
                 {
                     // disconnect?
                     throw new ClientException("Zero bytes read from socket");
+                    break;
                 }
 
                 // read message
                 ASCIIEncoding encoder = new ASCIIEncoding();
 
                 String get = encoder.GetString(message, 0, bytesRead);
+
+                object o = JsonConvert.DeserializeObject<object>(get);
+
+                onObjectParsed(o);
 
                 // noooooooot in final version of class please becausea ääääh
                 /*if (get == "server_stop")
