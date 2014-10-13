@@ -6,10 +6,16 @@ using System.Threading.Tasks;
 using System.Net.Sockets;
 using System.Threading;
 using System.Net;
-using Newtonsoft.Json;
+using System.Web.Helpers;
+
 
 namespace CommunicationLibrary
 {
+    // Events
+    public delegate void ReceiveHandler(TcpClient client, dynamic data);
+    public delegate void ConnectHandler(TcpClient client);
+    public delegate void DisconnectHandler(TcpClient client);
+
     /// <summary>
     ///     Server Class for TCP Communication.
     /// </summary>
@@ -19,26 +25,18 @@ namespace CommunicationLibrary
         private TcpListener tcpListener;
         private Thread listenThread;
         private List<TcpClient> allClients = new List<TcpClient>();
-        // private Log log;
-        private Boolean loggingEnabled;
         private Boolean serverActive;
 
-        ///// <summary>
-        /////     initialize the server with logging
-        ///// </summary>
-        ///// <param name="thelog"></param>
-        //public server(log thelog)
-        //{
-        //    log = thelog;
-        //    loggingenabled = true;
-        //}
+        // Event Handler
+        public ReceiveHandler onReceive;
+        public ConnectHandler onConnect;
+        public DisconnectHandler onDisconnect;
 
         /// <summary>
-        ///     Initialize the server without logging
+        ///     Initialize the server 
         /// </summary>
         public Server()
         {
-            loggingEnabled = false;
         }
 
         /// <summary>
@@ -58,12 +56,10 @@ namespace CommunicationLibrary
                 // set up thread & start the server
                 this.listenThread = new Thread(new ThreadStart(ListenForClients));
                 this.listenThread.Start();
-                //if (loggingEnabled) log.info("Server started on port " + port);
                 return true;
             }
             else
             {
-                //if (loggingEnabled) log.error("Server is already running");
                 return false;
             }
         }
@@ -74,16 +70,15 @@ namespace CommunicationLibrary
         /// <returns></returns>
         public Boolean stop()
         {
+            // TODO: improve stop function
             if (serverActive)
             {
                 serverActive = false;
-                //if (loggingEnabled) log.warn("Server is going to stop");
                 this.tcpListener.Stop();
                 return true;
             }
             else
             {
-                //if (loggingEnabled) log.error("Server is not running");
                 return false;
             }
         }
@@ -97,7 +92,7 @@ namespace CommunicationLibrary
         public Boolean send(TcpClient client, Object data)
         {
             // convert to json
-            string json = JsonConvert.SerializeObject(data);
+            string json = Json.Encode(data);
 
             // send to client
             return this.sendString(client, json);
@@ -183,11 +178,14 @@ namespace CommunicationLibrary
                     //with connected client
                     clientThread.Start(client);
                     // second part = IP of client
-                    //if (loggingEnabled) log.info("New connection to " + ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString());
+
+                    // call connect event
+                    this.onConnect(client);
+                    
                 }
                 catch (Exception e)
                 {
-                    //if (loggingEnabled) log.warn("Server stopped");
+
                 }
             }
         }
@@ -220,7 +218,6 @@ namespace CommunicationLibrary
                 catch
                 {
                     //a socket error has occured
-                    //if(loggingEnabled) log.error("a socket error has occurred");
                     break;
                 }
 
@@ -232,16 +229,24 @@ namespace CommunicationLibrary
 
                 //message has successfully been received
                 ASCIIEncoding encoder = new ASCIIEncoding();
-                String newstring = encoder.GetString(message, 0, bytesRead);
-                Console.WriteLine(newstring);
-                this.sendToAllExcept(tcpClient, newstring);
+                String receivedMessage = encoder.GetString(message, 0, bytesRead);
+
+                // convert json to dynamic object
+                dynamic data = Json.Decode(receivedMessage);
+
+                // call onReceive event
+                this.onReceive(tcpClient, data);
+
+
             }
+
+            // disconnect event handler
+            this.onDisconnect(tcpClient);
 
             // remove from array
             this.allClients.Remove(tcpClient);
 
             tcpClient.Close();
-            //if(loggingEnabled) log.info("the client has disconnected from the server");
         }
 
     }
