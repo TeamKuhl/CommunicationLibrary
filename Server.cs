@@ -6,15 +6,14 @@ using System.Threading.Tasks;
 using System.Net.Sockets;
 using System.Threading;
 using System.Net;
-using System.Web.Helpers;
 
 
 namespace CommunicationLibrary
 {
     // Events
-    public delegate void ReceiveHandler(TcpClient client, dynamic data);
-    public delegate void ConnectHandler(TcpClient client);
-    public delegate void DisconnectHandler(TcpClient client);
+    public delegate void ServerReceiveHandler(TcpClient client, String type, String data);
+    public delegate void ServerConnectHandler(TcpClient client);
+    public delegate void ServerDisconnectHandler(TcpClient client);
 
     /// <summary>
     ///     Server Class for TCP Communication.
@@ -28,9 +27,9 @@ namespace CommunicationLibrary
         private Boolean serverActive;
 
         // Event Handler
-        public ReceiveHandler onReceive;
-        public ConnectHandler onConnect;
-        public DisconnectHandler onDisconnect;
+        public ServerReceiveHandler onReceive;
+        public ServerConnectHandler onConnect;
+        public ServerDisconnectHandler onDisconnect;
 
         /// <summary>
         ///     Initialize the server 
@@ -84,34 +83,22 @@ namespace CommunicationLibrary
         }
 
         /// <summary>
-        ///     Converts object to string and send to client
-        /// </summary>
-        /// <param name="client">The client to send the object to.</param>
-        /// <param name="data">The object to send.</param>
-        /// <returns></returns>
-        public Boolean send(TcpClient client, Object data)
-        {
-            // convert to json
-            string json = Json.Encode(data);
-
-            // send to client
-            return this.sendString(client, json);
-        }
-
-        /// <summary>
         ///     Sends string to a client
         /// </summary>
         /// <param name="client">The client to send the message to.</param>
         /// <param name="message">The message to send.</param>
         /// <returns>Success of send process.</returns>
-        private Boolean sendString(TcpClient client, String message)
+        public Boolean send(TcpClient client, String type, String message)
         {
+            // parse
+            String data = type + ";" + message;
+
             // get client stream
             NetworkStream clientStream = client.GetStream();
 
             // encode message
             ASCIIEncoding encoder = new ASCIIEncoding();
-            byte[] buffer = encoder.GetBytes(message);
+            byte[] buffer = encoder.GetBytes(data);
 
             // send to client
             clientStream.Write(buffer, 0, buffer.Length);
@@ -125,13 +112,13 @@ namespace CommunicationLibrary
         /// </summary>
         /// <param name="data">The message to send.</param>
         /// <returns>Success of send process.</returns>
-        public Boolean sendToAll(Object data)
+        public Boolean sendToAll(String type, String message)
         {
             // loop all clients
             foreach (TcpClient client in this.allClients)
             {
                 // send message
-                this.send(client, data);
+                this.send(client, type, message);
             }
             return false;
         }
@@ -142,7 +129,7 @@ namespace CommunicationLibrary
         /// <param name="data">The message to send.</param>
         /// <param name="exception">The client who wont get the message</param>
         /// <returns>Success of send process.</returns>
-        public Boolean sendToAllExcept(TcpClient exception, Object data)
+        public Boolean sendToAllExcept(TcpClient exception, String type, String message)
         {
             // loop all clients
             foreach (TcpClient client in this.allClients)
@@ -150,7 +137,7 @@ namespace CommunicationLibrary
                 if (client != exception)
                 {
                     // send message
-                    this.send(client, data);
+                    this.send(client, type, message);
                 }
             }
             return false;
@@ -180,7 +167,7 @@ namespace CommunicationLibrary
                     // second part = IP of client
 
                     // call connect event
-                    this.onConnect(client);
+                    if(this.onConnect != null) this.onConnect(client);
                     
                 }
                 catch (Exception e)
@@ -231,17 +218,20 @@ namespace CommunicationLibrary
                 ASCIIEncoding encoder = new ASCIIEncoding();
                 String receivedMessage = encoder.GetString(message, 0, bytesRead);
 
-                // convert json to dynamic object
-                dynamic data = Json.Decode(receivedMessage);
+                String[] data = receivedMessage.Split(new Char[]{';'});
 
+                String type = data[0];
+                data = data.Where(w => w != data[0]).ToArray();
+                String msg = string.Join(";", data);
+                
                 // call onReceive event
-                this.onReceive(tcpClient, data);
+                if(this.onReceive != null) this.onReceive(tcpClient, type, msg);
 
 
             }
 
             // disconnect event handler
-            this.onDisconnect(tcpClient);
+            if(this.onDisconnect != null) this.onDisconnect(tcpClient);
 
             // remove from array
             this.allClients.Remove(tcpClient);

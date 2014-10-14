@@ -6,28 +6,12 @@ using System.Threading.Tasks;
 using System.Net.Sockets;
 using System.Threading;
 using System.Net;
-using Newtonsoft.Json;
+using System.Web.Helpers;
 
 namespace CommunicationLibrary
 {
-    /// <summary>
-    ///     Callback for received messages
-    /// </summary>
-    /// <param name="sender">The event sender.</param>
-    /// <param name="eventArgs">Event Arguments.</param>
-    public delegate void ClientReceiveCallback(object sender, EventArgs eventArgs);
-
-    /// <summary>
-    ///     Extends event arguments.
-    /// </summary>
-    public class ClientReceivedEventArgs : EventArgs
-    {
-        public ClientReceivedEventArgs(object o)
-        {
-            this.parsedResult = o;
-        }
-        public object parsedResult { get; set; }
-    }
+    // Eventhendler
+    public delegate void ClientReceiveHandler(String type, String message);
 
     /// <summary>
     ///     Client class to handle communication with a server.
@@ -41,19 +25,7 @@ namespace CommunicationLibrary
         /// <summary>
         ///     Client message event for incoming messages.
         /// </summary>
-        public event ClientReceiveCallback clientReceiveCallback;
-
-        /// <summary>
-        ///     Give parsed object to Eventhandler
-        /// </summary>
-        /// <param name="o">Object</param>
-        public void onObjectParsed(object o)
-        {
-            if (clientReceiveCallback != null)
-            {
-                clientReceiveCallback(this, new ClientReceivedEventArgs(o));
-            }
-        }
+        public ClientReceiveHandler onReceive;
 
         /// <summary>
         /// Connects to a server.
@@ -104,13 +76,12 @@ namespace CommunicationLibrary
         /// </summary>
         /// <param name="data">Data object</param>
         /// <returns></returns>
-        public Boolean send(Object data)
+        public Boolean send(String type, String message)
         {
-            // convert to string
-            string json = JsonConvert.SerializeObject(data);
+            String data = type + ";" + message;
 
             // send to server
-            return this.sendString(json);
+            return this.sendString(data);
         }
 
         /// <summary>
@@ -140,49 +111,45 @@ namespace CommunicationLibrary
             byte[] message = new byte[4096];
 
             // forever...
-            while (true)
+            while (client.Connected)
             {
-                int bytesRead = 0;
                 try
                 {
-                    // wait for message
-                    bytesRead = this.clientStream.Read(message, 0, 4096);
+                    int bytesRead = 0;
+                    try
+                    {
+                        // wait for message
+                        bytesRead = this.clientStream.Read(message, 0, 4096);
+                    }
+                    catch
+                    {
+                        // error
+                        break;
+                    }
+
+                    if (bytesRead == 0)
+                    {
+                        // disconnect?
+                        throw new ClientException("Zero bytes read from socket");
+                        break;
+                    }
+
+
+                    // read message
+                    ASCIIEncoding encoder = new ASCIIEncoding();
+                    String get = encoder.GetString(message, 0, bytesRead);
+
+                    String[] data = get.Split(new Char[] { ';' });
+
+                    String type = data[0];
+                    data = data.Where(w => w != data[0]).ToArray();
+                    String msg = string.Join(";", data);
+
+                    // call onReceive event
+                    if (this.onReceive != null) this.onReceive(type, msg);
                 }
                 catch
-                {
-                    // error
-                    break;
-                }
-
-                if (bytesRead == 0)
-                {
-                    // disconnect?
-                    throw new ClientException("Zero bytes read from socket");
-                    break;
-                }
-
-                // read message
-                ASCIIEncoding encoder = new ASCIIEncoding();
-
-                String get = encoder.GetString(message, 0, bytesRead);
-
-                object o = JsonConvert.DeserializeObject<object>(get);
-
-                onObjectParsed(o);
-
-                // noooooooot in final version of class please becausea ääääh
-                /*if (get == "server_stop")
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("Server has stopped");
-                    Console.ResetColor();
-                    Console.WriteLine("Press any key to exit!");
-                    Console.ReadLine();
-                    Environment.Exit(0);
-                }
-
-                // print to console (debug)
-                Console.WriteLine(get);*/
+                { }
             }
         }
     }
