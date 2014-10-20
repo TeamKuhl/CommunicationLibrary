@@ -129,7 +129,6 @@ namespace CommunicationLibrary
                     if (bytesRead == 0)
                     {
                         // disconnect?
-                        throw new ClientException("Zero bytes read from socket");
                         break;
                     }
 
