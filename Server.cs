@@ -170,10 +170,7 @@ namespace CommunicationLibrary
                     if(this.onConnect != null) this.onConnect(client);
                     
                 }
-                catch (Exception e)
-                {
-
-                }
+                catch (Exception) {}
             }
         }
 

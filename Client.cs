@@ -55,7 +55,6 @@ namespace CommunicationLibrary
             }
             catch (Exception)
             {
-                //Console.WriteLine(e.Message);
                 return false;
             }
         }
