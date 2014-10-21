@@ -13,42 +13,42 @@ namespace CommunicationLibrary
     public delegate void ClientReceiveHandler(String type, String message);
 
     /// <summary>
-    ///     Client class to handle communication with a server.
+    ///     Client class to handle communication with a server
     /// </summary>
     public class Client
     {
-        // tcp
+        // TCP
         private TcpClient client;
         private NetworkStream clientStream;
 
         /// <summary>
-        ///     Client message event for incoming messages.
+        ///     Client message event for incoming messages
         /// </summary>
         public ClientReceiveHandler onReceive;
 
         /// <summary>
-        /// Connects to a server.
+        /// Connect to a server
         /// </summary>
-        /// <param name="ip">The ip of the server.</param>
-        /// <param name="port">The port of the server.</param>
-        /// <returns>Success of connection.</returns>
+        /// <param name="ip">The ip of the server</param>
+        /// <param name="port">The port of the server</param>
+        /// <returns>Returns true of the connection attempt succeeded</returns>
         public Boolean connect(String ip, int port)
         {
             this.client = new TcpClient();
 
             try
             {
-                // get server & connect
+                // Get server and connect
                 IPEndPoint serverEndPoint = new IPEndPoint(IPAddress.Parse(ip), port);
                 this.client.Connect(serverEndPoint);
 
-                // get stream
+                // Get stream
                 this.clientStream = this.client.GetStream();
 
-                // new thread
+                // New thread
                 Thread listener = new Thread(messageListener);
 
-                // start listener
+                // Dtart listener
                 listener.Start();
 
                 return true;

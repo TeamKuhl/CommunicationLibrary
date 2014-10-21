@@ -16,7 +16,7 @@ namespace CommunicationLibrary
     public delegate void ServerDisconnectHandler(TcpClient client);
 
     /// <summary>
-    ///     Server Class for TCP Communication.
+    ///     Server class for TCP communication
     /// </summary>
     public class Server
     {
@@ -26,7 +26,7 @@ namespace CommunicationLibrary
         private List<TcpClient> allClients = new List<TcpClient>();
         private Boolean serverActive;
 
-        // Event Handler
+        // Event handler
         public ServerReceiveHandler onReceive;
         public ServerConnectHandler onConnect;
         public ServerDisconnectHandler onDisconnect;
@@ -39,20 +39,20 @@ namespace CommunicationLibrary
         }
 
         /// <summary>
-        ///     Starts the server
+        ///     Start the server
         /// </summary>
-        /// <param name="port">The port to start the server on.</param>
-        /// <returns>Success of start process.</returns>
+        /// <param name="port">The port to start the server on</param>
+        /// <returns>Returns false if the server is already started</returns>
         public Boolean start(int port)
         {
             if (!serverActive)
             {
                 serverActive = true;
 
-                // set up tcp listener
+                // Set up the TCP listener
                 this.tcpListener = new TcpListener(IPAddress.Any, port);
 
-                // set up thread & start the server
+                // Set up the listener thread and start the server
                 this.listenThread = new Thread(new ThreadStart(ListenForClients));
                 this.listenThread.Start();
                 return true;
@@ -64,9 +64,9 @@ namespace CommunicationLibrary
         }
 
         /// <summary>
-        ///     Stops the Server
+        ///     Stop the Server
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Returns false if the server is already stopped</returns>
         public Boolean stop()
         {
             // TODO: improve stop function
@@ -83,24 +83,24 @@ namespace CommunicationLibrary
         }
 
         /// <summary>
-        ///     Sends string to a client
+        ///     Send a string to a client
         /// </summary>
-        /// <param name="client">The client to send the message to.</param>
-        /// <param name="message">The message to send.</param>
-        /// <returns>Success of send process.</returns>
+        /// <param name="client">The client to send the message to</param>
+        /// <param name="message">The message to send</param>
+        /// <returns>Returns true if the message was sent successfully</returns>
         public Boolean send(TcpClient client, String type, String message)
         {
-            // parse
+            // Concatenate type and message with separator
             String data = type + ";" + message;
 
-            // get client stream
+            // Get the NetworkStream for the target
             NetworkStream clientStream = client.GetStream();
 
-            // encode message
+            // Encode the message for transmission
             ASCIIEncoding encoder = new ASCIIEncoding();
             byte[] buffer = encoder.GetBytes(data);
 
-            // send to client
+            // Send the message to the client
             clientStream.Write(buffer, 0, buffer.Length);
             clientStream.Flush();
 
@@ -108,81 +108,100 @@ namespace CommunicationLibrary
         }
 
         /// <summary>
-        ///     Send data object to all clients
+        ///     Send a string to all clients
         /// </summary>
-        /// <param name="data">The message to send.</param>
-        /// <returns>Success of send process.</returns>
+        /// <param name="data">The message to send</param>
+        /// <returns>Returns true if the message was sent to all clients successfully</returns>
         public Boolean sendToAll(String type, String message)
         {
-            // loop all clients
+            bool retVal = true;
+
+            // Loop all clients
             foreach (TcpClient client in this.allClients)
             {
-                // send message
-                this.send(client, type, message);
+                // Only update retVal if it hasn't been set to false yet
+                if (retVal)
+                {
+                    // Send message to current client
+                    retVal = this.send(client, type, message);
+                }
+                else
+                {
+                    this.send(client, type, message);
+                }
             }
-            return false;
+            return retVal;
         }
 
         /// <summary>
         ///     Send data to all clients except one
         /// </summary>
-        /// <param name="data">The message to send.</param>
-        /// <param name="exception">The client who wont get the message</param>
-        /// <returns>Success of send process.</returns>
+        /// <param name="data">The message to send</param>
+        /// <param name="exception">The client who won't get the message</param>
+        /// <returns>Returns true if the message was sent to all clients successfully.</returns>
         public Boolean sendToAllExcept(TcpClient exception, String type, String message)
         {
-            // loop all clients
+            bool retVal = true;
+
+            // Loop all clients
             foreach (TcpClient client in this.allClients)
             {
                 if (client != exception)
                 {
-                    // send message
-                    this.send(client, type, message);
+                    // Only update retVal if it hasn't been set to false yet
+                    if (retVal)
+                    {
+                        // Send message to current client
+                        retVal = this.send(client, type, message);
+                    }
+                    else
+                    {
+                        this.send(client, type, message);
+                    }
                 }
             }
-            return false;
+            return retVal;
         }
 
         /// <summary>
-        ///     Listener for Communication
+        ///     Start the TCP listener so clients can connect
         /// </summary>
         private void ListenForClients()
         {
             if (serverActive) this.tcpListener.Start();
+            else throw new ListenerException("Failed to start TCP listener: Server is not running!");
 
             while (serverActive)
             {
                 Thread clientThread = new Thread(new ParameterizedThreadStart(HandleClientComm));
 
-                //getting error when waiting for client while server is already closed
+                // Catch exception when waiting for clients while the server is already closed
                 try
                 {
 
-                    //blocks until a client has connected to the server
+                    // Block until a client has connected to the server
                     TcpClient client = this.tcpListener.AcceptTcpClient();
 
-                    //create a thread to handle communication 
-                    //with connected client
+                    // Create a thread to handle communication with this client
                     clientThread.Start(client);
-                    // second part = IP of client
+                    // Second part = IP of client
 
-                    // call connect event
+                    // Call connect event
                     if(this.onConnect != null) this.onConnect(client);
-                    
                 }
                 catch (Exception) {}
             }
         }
 
         /// <summary>
-        ///     Handles client communication.
+        ///     Handle client communication.
         /// </summary>
         /// <param name="client">Client object</param>
         private void HandleClientComm(object client)
         {
             TcpClient tcpClient = (TcpClient)client;
 
-            // add to client list
+            // Add to client list
             this.allClients.Add(tcpClient);
 
             NetworkStream clientStream = tcpClient.GetStream();
@@ -196,43 +215,43 @@ namespace CommunicationLibrary
 
                 try
                 {
-                    //blocks until a client sends a message
+                    // Block until a client sends a message
                     bytesRead = clientStream.Read(message, 0, 4096);
                 }
-                catch
+                catch (System.IO.IOException)
                 {
-                    //a socket error has occured
+                    // A socket error has occured
                     break;
                 }
 
                 if (bytesRead == 0)
                 {
-                    //the client has disconnected from the server
+                    // The client has disconnected from the server
                     break;
                 }
 
-                //message has successfully been received
+                // Message was successfully received
                 ASCIIEncoding encoder = new ASCIIEncoding();
                 String receivedMessage = encoder.GetString(message, 0, bytesRead);
 
+                // Split message from  type
                 String[] data = receivedMessage.Split(new Char[]{';'});
 
                 String type = data[0];
                 data = data.Where(w => w != data[0]).ToArray();
                 String msg = string.Join(";", data);
                 
-                // call onReceive event
+                // Call onReceive event
                 if(this.onReceive != null) this.onReceive(tcpClient, type, msg);
-
-
             }
 
-            // disconnect event handler
+            // Disconnection event handler
             if(this.onDisconnect != null) this.onDisconnect(tcpClient);
 
-            // remove from array
+            // Remove the client from active clients list
             this.allClients.Remove(tcpClient);
 
+            // Close the socket as final  operation
             tcpClient.Close();
         }
 
