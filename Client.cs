@@ -9,7 +9,7 @@ using System.Net;
 
 namespace CommunicationLibrary
 {
-    // Eventhendler
+    // Eventhandler
     public delegate void ClientReceiveHandler(String type, String message);
 
     /// <summary>
@@ -78,7 +78,7 @@ namespace CommunicationLibrary
         public Boolean send(String type, String message)
         {
             // Concatenate type and base64-encoded message with separator
-            String data = type + ";" + Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(message));
+            String data = type + ";" + Util.base64Encode(message);
 
             // encode message
             ASCIIEncoding encoder = new ASCIIEncoding();
@@ -133,7 +133,7 @@ namespace CommunicationLibrary
                     String msg = string.Join(";", data);
 
                     // Call onReceive event
-                    if (this.onReceive != null) this.onReceive(type, System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(msg)));
+                    if (this.onReceive != null) this.onReceive(type, Util.base64Decode(msg));
                 }
                 catch
                 { }

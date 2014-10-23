@@ -92,7 +92,7 @@ namespace CommunicationLibrary
         public Boolean send(TcpClient client, String type, String message)
         {
             // Concatenate type and base64-encoded message with separator
-            String data = type + ";" + Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(message));
+            String data = type + ";" + Util.base64Encode(message);
 
             // Get the NetworkStream for the target
             NetworkStream clientStream = client.GetStream();
@@ -243,7 +243,7 @@ namespace CommunicationLibrary
                 String msg = string.Join(";", data);
                 
                 // Call onReceive event
-                if(this.onReceive != null) this.onReceive(tcpClient, type, System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(msg)));
+                if(this.onReceive != null) this.onReceive(tcpClient, type, Util.base64Decode(msg));
             }
 
             // Disconnection event handler
