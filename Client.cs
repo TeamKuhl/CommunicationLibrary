@@ -29,7 +29,7 @@ namespace CommunicationLibrary
         /// <summary>
         /// Connect to a server
         /// </summary>
-        /// <param name="ip">The ip of the server</param>
+        /// <param name="ip">The IP address of the server</param>
         /// <param name="port">The port of the server</param>
         /// <returns>Returns true of the connection attempt succeeded</returns>
         public Boolean connect(String ip, int port)
@@ -70,31 +70,21 @@ namespace CommunicationLibrary
         }
 
         /// <summary>
-        ///     Converts the object to JSON and sends it to server
+        ///     Send a string to server
         /// </summary>
-        /// <param name="data">Data object</param>
-        /// <returns></returns>
+        /// <param name="type">The type of the message</param>
+        /// <param name="message">The message to send</param>
+        /// <returns>Returns true if the message was sent successfully</returns>
         public Boolean send(String type, String message)
         {
+            // Concatenate type and message with separator
             String data = type + ";" + message;
-
-            // send to server
-            return this.sendString(data);
-        }
-
-        /// <summary>
-        ///     Sends plain string to server
-        /// </summary>
-        /// <param name="message">The message to send to the server</param>
-        /// <returns></returns>
-        private Boolean sendString(String message)
-        {
 
             // encode message
             ASCIIEncoding encoder = new ASCIIEncoding();
             byte[] buffer = encoder.GetBytes(message);
 
-            // send
+            // Send string to the server
             this.clientStream.Write(buffer, 0, buffer.Length);
             this.clientStream.Flush();
 
@@ -102,13 +92,13 @@ namespace CommunicationLibrary
         }
 
         /// <summary>
-        ///     Listener for messages from Server.
+        ///     Listen for messages from Server.
         /// </summary>
         private void messageListener()
         {
             byte[] message = new byte[4096];
 
-            // forever...
+            // Loop forever while the client is connected
             while (client.Connected)
             {
                 try
@@ -116,23 +106,23 @@ namespace CommunicationLibrary
                     int bytesRead = 0;
                     try
                     {
-                        // wait for message
+                        // Wait for a message
                         bytesRead = this.clientStream.Read(message, 0, 4096);
                     }
                     catch
                     {
-                        // error
+                        // Error
                         break;
                     }
 
                     if (bytesRead == 0)
                     {
-                        // disconnect?
+                        // Connection closed?
                         break;
                     }
 
 
-                    // read message
+                    // Read message
                     ASCIIEncoding encoder = new ASCIIEncoding();
                     String get = encoder.GetString(message, 0, bytesRead);
 
@@ -142,7 +132,7 @@ namespace CommunicationLibrary
                     data = data.Where(w => w != data[0]).ToArray();
                     String msg = string.Join(";", data);
 
-                    // call onReceive event
+                    // Call onReceive event
                     if (this.onReceive != null) this.onReceive(type, msg);
                 }
                 catch

@@ -86,6 +86,7 @@ namespace CommunicationLibrary
         ///     Send a string to a client
         /// </summary>
         /// <param name="client">The client to send the message to</param>
+        /// <param name="type">The type of the message</param>
         /// <param name="message">The message to send</param>
         /// <returns>Returns true if the message was sent successfully</returns>
         public Boolean send(TcpClient client, String type, String message)
