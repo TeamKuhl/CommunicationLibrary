@@ -77,8 +77,8 @@ namespace CommunicationLibrary
         /// <returns>Returns true if the message was sent successfully</returns>
         public Boolean send(String type, String message)
         {
-            // Concatenate type and message with separator
-            String data = type + ";" + message;
+            // Concatenate type and base64-encoded message with separator
+            String data = type + ";" + Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(message));
 
             // encode message
             ASCIIEncoding encoder = new ASCIIEncoding();
@@ -133,7 +133,7 @@ namespace CommunicationLibrary
                     String msg = string.Join(";", data);
 
                     // Call onReceive event
-                    if (this.onReceive != null) this.onReceive(type, msg);
+                    if (this.onReceive != null) this.onReceive(type, System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(msg)));
                 }
                 catch
                 { }
