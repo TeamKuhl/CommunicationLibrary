@@ -238,7 +238,6 @@ namespace CommunicationLibrary
 
                 while (get.Contains('\n'))
                 {
-                    Console.WriteLine("in while");
                     string[] data1 = get.Split(new Char[] { '\n' }, 2);
                     get = data1[1];
                     if (!data1[0].Contains(';')) throw new Exception("Received malformed message");
