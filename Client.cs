@@ -82,7 +82,7 @@ namespace CommunicationLibrary
 
             // encode message
             ASCIIEncoding encoder = new ASCIIEncoding();
-            byte[] buffer = encoder.GetBytes(message);
+            byte[] buffer = encoder.GetBytes(data);
 
             // Send string to the server
             this.clientStream.Write(buffer, 0, buffer.Length);
