@@ -92,7 +92,7 @@ namespace CommunicationLibrary
         public Boolean send(TcpClient client, String type, String message)
         {
             // Concatenate type and base64-encoded message with separator
-            String data = type + ";" + Util.base64Encode(message);
+            String data = type + ";" + Util.base64Encode(message) + "\n";
 
             // Get the NetworkStream for the target
             NetworkStream clientStream = client.GetStream();
@@ -209,6 +209,7 @@ namespace CommunicationLibrary
 
             byte[] message = new byte[4096];
             int bytesRead;
+            string remainder = "";
 
             while (true)
             {
@@ -233,17 +234,22 @@ namespace CommunicationLibrary
 
                 // Message was successfully received
                 ASCIIEncoding encoder = new ASCIIEncoding();
-                String receivedMessage = encoder.GetString(message, 0, bytesRead);
+                string get = remainder + encoder.GetString(message, 0, bytesRead);
 
-                // Split message from  type
-                String[] data = receivedMessage.Split(new Char[]{';'});
+                while (get.Contains('\n'))
+                {
+                    Console.WriteLine("in while");
+                    string[] data1 = get.Split(new Char[] { '\n' }, 2);
+                    get = data1[1];
+                    if (!data1[0].Contains(';')) throw new Exception("Received malformed message");
+                    string[] data2 = data1[0].Split(new Char[] { ';' }, 2);
+                    string type = data2[0];
+                    string msg = Util.base64Decode(data2[1]);
 
-                String type = data[0];
-                data = data.Where(w => w != data[0]).ToArray();
-                String msg = string.Join(";", data);
-                
-                // Call onReceive event
-                if(this.onReceive != null) this.onReceive(tcpClient, type, Util.base64Decode(msg));
+                    // Call onReceive event
+                    if (this.onReceive != null) this.onReceive(tcpClient, type, msg);
+                }
+                remainder = get;
             }
 
             // Disconnection event handler

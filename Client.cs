@@ -63,7 +63,7 @@ namespace CommunicationLibrary
         ///     Disconnect from the Server
         /// </summary>
         /// <returns></returns>
-        public Boolean disconnect()
+        public bool disconnect()
         {
             client.Close();
             return true;
@@ -75,10 +75,10 @@ namespace CommunicationLibrary
         /// <param name="type">The type of the message</param>
         /// <param name="message">The message to send</param>
         /// <returns>Returns true if the message was sent successfully</returns>
-        public Boolean send(String type, String message)
+        public bool send(String type, String message)
         {
             // Concatenate type and base64-encoded message with separator
-            String data = type + ";" + Util.base64Encode(message);
+            String data = type + ";" + Util.base64Encode(message) + "\n";
 
             // encode message
             ASCIIEncoding encoder = new ASCIIEncoding();
@@ -97,13 +97,15 @@ namespace CommunicationLibrary
         private void messageListener()
         {
             byte[] message = new byte[4096];
+            int bytesRead;
+            string remainder = "";
 
             // Loop forever while the client is connected
             while (client.Connected)
             {
                 try
                 {
-                    int bytesRead = 0;
+                    bytesRead = 0;
                     try
                     {
                         // Wait for a message
@@ -124,16 +126,21 @@ namespace CommunicationLibrary
 
                     // Read message
                     ASCIIEncoding encoder = new ASCIIEncoding();
-                    String get = encoder.GetString(message, 0, bytesRead);
+                    string get = remainder + encoder.GetString(message, 0, bytesRead);
 
-                    String[] data = get.Split(new Char[] { ';' });
+                    while (get.Contains('\n'))
+                    {
+                        string[] data1 = get.Split(new Char[] { '\n' }, 2);
+                        get = data1[1];
+                        if (!data1[0].Contains(';')) throw new Exception("Received malformed message");
+                        string[] data2 = data1[0].Split(new Char[] { ';' }, 2);
+                        string type = data2[0];
+                        string msg = Util.base64Decode(data2[1]);
 
-                    String type = data[0];
-                    data = data.Where(w => w != data[0]).ToArray();
-                    String msg = string.Join(";", data);
-
-                    // Call onReceive event
-                    if (this.onReceive != null) this.onReceive(type, Util.base64Decode(msg));
+                        // Call onReceive event
+                        if (this.onReceive != null) this.onReceive(type, msg);
+                    }
+                    remainder = get;
                 }
                 catch
                 { }
