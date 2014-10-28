@@ -50,6 +50,7 @@ namespace CommunicationLibrary
                 serverActive = true;
 
                 // Set up the TCP listener
+                // TODO: Check if port is in use
                 this.tcpListener = new TcpListener(IPAddress.Any, port);
 
                 // Set up the listener thread and start the server
@@ -260,6 +261,5 @@ namespace CommunicationLibrary
             // Close the socket as final  operation
             tcpClient.Close();
         }
-
     }
 }

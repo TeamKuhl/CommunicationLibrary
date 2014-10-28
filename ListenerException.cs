@@ -19,5 +19,10 @@ namespace CommunicationLibrary
         public ListenerException(string message, Exception innerException) : base(message, innerException)
         {
         }
+
+        public bool testComponent()
+        {
+            return true;
+        }
     }
 }
