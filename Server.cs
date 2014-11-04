@@ -93,7 +93,7 @@ namespace CommunicationLibrary
         public Boolean send(TcpClient client, String type, String message)
         {
             // Concatenate type and base64-encoded message with separator
-            String data = type + ";" + Util.base64Encode(message) + "\n";
+            String data = Util.base64Encode(type) + ";" + Util.base64Encode(message) + "\n";
 
             // Get the NetworkStream for the target
             NetworkStream clientStream = client.GetStream();
@@ -243,7 +243,7 @@ namespace CommunicationLibrary
                     get = data1[1];
                     if (!data1[0].Contains(';')) throw new Exception("Received malformed message");
                     string[] data2 = data1[0].Split(new Char[] { ';' }, 2);
-                    string type = data2[0];
+                    string type = Util.base64Decode(data2[0]);
                     string msg = Util.base64Decode(data2[1]);
 
                     // Call onReceive event
