@@ -8,15 +8,18 @@ namespace CommunicationLibrary
 {
     class ListenerException : Exception
     {
-        public ListenerException() : base()
+        public ListenerException()
+            : base()
         {
         }
 
-        public ListenerException(string message) : base(message)
+        public ListenerException(string message)
+            : base(message)
         {
         }
 
-        public ListenerException(string message, Exception innerException) : base(message, innerException)
+        public ListenerException(string message, Exception innerException)
+            : base(message, innerException)
         {
         }
 

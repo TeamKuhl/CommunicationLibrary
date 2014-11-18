@@ -198,9 +198,9 @@ namespace CommunicationLibrary
                     // Second part = IP of client
 
                     // Call connect event
-                    if(this.onConnect != null) this.onConnect(client);
+                    if (this.onConnect != null) this.onConnect(client);
                 }
-                catch (Exception) {}
+                catch (Exception) { }
             }
         }
 
