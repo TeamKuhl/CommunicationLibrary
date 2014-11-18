@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Net.Sockets;
 using System.Threading;
 using System.Net;
+using System.IO;
 
 
 namespace CommunicationLibrary
@@ -102,9 +103,17 @@ namespace CommunicationLibrary
             ASCIIEncoding encoder = new ASCIIEncoding();
             byte[] buffer = encoder.GetBytes(data);
 
-            // Send the message to the client
-            clientStream.Write(buffer, 0, buffer.Length);
-            clientStream.Flush();
+            try
+            {
+                // Send the message to the client
+                clientStream.Write(buffer, 0, buffer.Length);
+                clientStream.Flush();
+            }
+            catch (IOException)
+            {
+                // Looks like the client is no longer connected
+                handleDisconnect(client);
+            }
 
             return true;
         }
@@ -175,7 +184,7 @@ namespace CommunicationLibrary
 
             while (serverActive)
             {
-                Thread clientThread = new Thread(new ParameterizedThreadStart(HandleClientComm));
+                Thread clientThread = new Thread(new ParameterizedThreadStart(handleClientComm));
 
                 // Catch exception when waiting for clients while the server is already closed
                 try
@@ -198,15 +207,15 @@ namespace CommunicationLibrary
         /// <summary>
         ///     Handle client communication.
         /// </summary>
-        /// <param name="client">Client object</param>
-        private void HandleClientComm(object client)
+        /// <param name="objClient">Client object</param>
+        private void handleClientComm(object objClient)
         {
-            TcpClient tcpClient = (TcpClient)client;
+            TcpClient client = (TcpClient)objClient;
 
             // Add to client list
-            this.allClients.Add(tcpClient);
+            this.allClients.Add(client);
 
-            NetworkStream clientStream = tcpClient.GetStream();
+            NetworkStream clientStream = client.GetStream();
 
             byte[] message = new byte[4096];
             int bytesRead;
@@ -247,19 +256,24 @@ namespace CommunicationLibrary
                     string msg = Util.base64Decode(data2[1]);
 
                     // Call onReceive event
-                    if (this.onReceive != null) this.onReceive(tcpClient, type, msg);
+                    if (this.onReceive != null) this.onReceive(client, type, msg);
                 }
                 remainder = get;
             }
 
+            handleDisconnect(client);
+        }
+
+        private void handleDisconnect(TcpClient client)
+        {
             // Disconnection event handler
-            if(this.onDisconnect != null) this.onDisconnect(tcpClient);
+            if (this.onDisconnect != null) this.onDisconnect(client);
 
             // Remove the client from active clients list
-            this.allClients.Remove(tcpClient);
+            this.allClients.Remove(client);
 
             // Close the socket as final  operation
-            tcpClient.Close();
+            client.Close();
         }
     }
 }
